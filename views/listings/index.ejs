@@ -142,22 +142,24 @@
         const imageUrl = listing.image?.url || (listing.images && listing.images[0]?.url) || "";
     %>
     <div class="col listing-wrapper" data-categories="<%= categories %>">
-        <a href="/listings/<%= listing._id %>" style="text-decoration: none;">
-            <div class="card listing-card">
-                <img src="<%= imageUrl %>?t=<%= Date.now() %>" class="card-img-top" alt="listing-image" style="height: 20rem;">
-                <div class="card-img-overlay">
-                    <h5 class="card-title"><%= listing.title %></h5>
-                    <p class="card-text"><%= listing.description %></p>
-                    <p class="card-text"><%= listing.location %>, <%= listing.country %></p>
-                </div>
-                <div class="card-body">
-                    <p class="card-text"><b><%= listing.title %></b></p>
-                    <p class="without-tax"><%= price.toLocaleString('en-IN') %>120 points</p>
-                    <p class="with-tax hidden">&#8377;<%= (price * 1.18).toLocaleString('en-IN') %>/ night GST invoice</p>
-                </div>
+    <a href="/listings/<%= listing._id %>" style="text-decoration: none;">
+        <div class="card listing-card">
+            <img src="<%= imageUrl %>?t=<%= Date.now() %>" class="card-img-top" alt="listing-image" style="height: 20rem;">
+            <div class="card-img-overlay">
+                <h5 class="card-title"><%= listing.title %></h5>
+                <p class="card-text"><%= listing.description %></p>
+                <p class="card-text"><%= listing.location %>, <%= listing.country %></p>
             </div>
-        </a>
-    </div>
+            <div class="card-body">
+                <p class="card-text"><b><%= listing.title %></b></p>
+                <% const randomPoints = Math.floor(Math.random() * (200 - 10 + 1)) + 10; %>
+                <p class="without-tax"><%= randomPoints %> points</p>
+                <p class="with-tax hidden">&#8377;<%= (price * 1.18).toLocaleString('en-IN') %>/ night GST invoice</p>
+            </div>
+        </div>
+    </a>
+</div>
+
     <% } %>
 </div>
 
