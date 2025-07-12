@@ -1,5 +1,264 @@
 <% layout("/layouts/boilerplate") %>
-<div class="container mt-5">
-    <h1>Welcome Admin, <%= user.username %>!</h1>
-    <p>This is the <strong>Admin Dashboard</strong>.</p>
+
+<div class="container admin-dashboard">
+  <h1 class="admin-heading">Welcome Admin, <%= user.username %>!</h1>
+  <p class="admin-subtitle">This is the <strong>Admin Dashboard</strong>.</p>
+
+  <!-- Admin Info -->
+  <section class="admin-profile glass-card">
+    <img src="/images/admin-avatar.png" alt="Admin Profile" class="admin-pic" onerror="this.src='https://img.icons8.com/ios-filled/100/user-male-circle.png';">
+    <div>
+      <h2>Admin Panel</h2>
+      <p>Welcome, <strong><%= user.username %></strong></p>
+    </div>
+  </section>
+
+  <!-- Pending Items -->
+  <section class="section">
+    <h3>🕒 Pending Item Listings</h3>
+    <div class="grid-layout">
+      <div class="glass-card item-card">
+        <img src="/images/item1.jpg" alt="Leather Boots" onerror="this.style.display='none'">
+        <h4>Leather Boots</h4>
+        <p>Uploaded by: <strong>user123</strong></p>
+        <div class="btn-group">
+          <button class="btn btn-approve">Approve</button>
+          <button class="btn btn-reject">Reject</button>
+        </div>
+      </div>
+
+      <div class="glass-card item-card">
+        <img src="/images/item2.jpg" alt="Winter Coat" onerror="this.style.display='none'">
+        <h4>Winter Coat</h4>
+        <p>Uploaded by: <strong>fashionLover</strong></p>
+        <div class="btn-group">
+          <button class="btn btn-approve">Approve</button>
+          <button class="btn btn-reject">Reject</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Reported Items -->
+  <section class="section">
+    <h3>⚠ Reported Inappropriate Items</h3>
+    <ul class="report-list">
+      <li>
+        <span>🛑 Offensive T-Shirt</span> by spamUser01
+        <button class="btn btn-remove">Remove</button>
+      </li>
+      <li>
+        <span>🛑 Fake Brand Shoes</span> by fakeSeller
+        <button class="btn btn-remove">Remove</button>
+      </li>
+    </ul>
+  </section>
+
+  <!-- All Items -->
+  <section class="section">
+    <h3>📦 All Listed Items</h3>
+    <div class="grid-layout">
+      <div class="glass-card item-card">
+        <img src="/images/item3.jpg" alt="Canvas Bag" onerror="this.style.display='none'">
+        <h4>Canvas Bag</h4>
+        <p>Uploader: <strong>userAlpha</strong></p>
+        <button class="btn btn-remove">Remove</button>
+      </div>
+
+      <div class="glass-card item-card">
+        <img src="/images/item4.jpg" alt="Graphic Hoodie" onerror="this.style.display='none'">
+        <h4>Graphic Hoodie</h4>
+        <p>Uploader: <strong>userBeta</strong></p>
+        <button class="btn btn-remove">Remove</button>
+      </div>
+
+      <div class="glass-card item-card">
+        <img src="/images/item5.jpg" alt="Floral Shirt" onerror="this.style.display='none'">
+        <h4>Floral Shirt</h4>
+        <p>Uploader: <strong>userGamma</strong></p>
+        <button class="btn btn-remove">Remove</button>
+      </div>
+    </div>
+  </section>
 </div>
+<% if (currUser) { %>
+    <div class="logout-container">
+      <a href="/logout" class="logout-button">Log Out</a>
+    </div>
+  <% } %>
+
+<style>
+  body {
+    background: linear-gradient(to bottom right, #6a0572, #320d3e);
+    color: white;
+  }
+
+  .admin-dashboard {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+  }
+
+  .admin-heading {
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .admin-subtitle {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 1.2rem;
+    color: #ddd;
+  }
+
+  .admin-profile {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+
+  .admin-pic {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #fff;
+  }
+
+  .section {
+    margin-bottom: 50px;
+  }
+
+  .section h3 {
+    font-size: 1.6rem;
+    margin-bottom: 20px;
+    color: #f1f1f1;
+  }
+
+  .grid-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s;
+  }
+
+  .glass-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .glass-card img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 12px;
+  }
+
+  .item-card h4 {
+    margin: 0 0 8px;
+    font-size: 1.2rem;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .btn {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  .btn-approve {
+    background: #28a745;
+    color: white;
+  }
+
+  .btn-reject {
+    background: #dc3545;
+    color: white;
+  }
+
+  .btn-remove {
+    background: #ff6b6b;
+    color: white;
+  }
+
+  .btn:hover {
+    opacity: 0.85;
+  }
+
+  .report-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .report-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    margin-bottom: 10px;
+    border-radius: 10px;
+    align-items: center;
+  }
+
+  @media (max-width: 768px) {
+    .admin-heading {
+      font-size: 2rem;
+    }
+
+    .admin-profile {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .btn-group {
+      flex-direction: column;
+      gap: 6px;
+    }
+  }
+
+  .logout-container {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.logout-button {
+  display: inline-block;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 16px;
+  color: white;
+  background: linear-gradient(to right, #ff416c, #ff4b2b);
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.logout-button:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(to right, #ff4b2b, #ff416c);
+  text-decoration: none;
+}
+
+</style>
