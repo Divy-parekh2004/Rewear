@@ -1,0 +1,260 @@
+<% layout("/layouts/boilerplate") %>
+
+<div class="header">
+  <h1>Welcome, <%= user.username %>!</h1>
+</div>
+
+<div class="card">
+  <h2>Profile</h2>
+  <p><strong>Name:</strong> <%= user.username %></p>
+  <p><strong>Email:</strong> <%= user.email %></p>
+  <p><strong>Role:</strong> <%= user.role %></p>
+  <p><strong>Points:</strong> 120</p>
+</div>
+
+<div class="tabs-container">
+  <div class="tabs">
+    <div class="tab active" data-tab="uploaded">Uploaded Items</div>
+    <div class="tab" data-tab="ongoing">Ongoing Swaps</div>
+    <div class="tab" data-tab="completed">Completed Swaps</div>
+  </div>
+</div>
+
+<div id="uploaded" class="tab-content active card">
+  <div class="section-title">Your Uploaded Items</div>
+  <div class="item">
+    <p><strong>Item:</strong> Denim Jacket</p>
+    <p>Status: Available</p>
+  </div>
+  <div class="item">
+    <p><strong>Item:</strong> Vintage Skirt</p>
+    <p>Status: In Swap Request</p>
+  </div>
+  <div class="item">
+    <p><strong>Item:</strong> Graphic Tee</p>
+    <p>Status: Swapped</p>
+  </div>
+</div>
+
+<div id="ongoing" class="tab-content card">
+  <div class="section-title">Ongoing Swaps</div>
+  <div class="item">
+    <p><strong>You Send:</strong> Vintage Skirt</p>
+    <p><strong>You Receive:</strong> Wool Sweater</p>
+    <p><strong>Swap Partner:</strong> @alex92</p>
+    <p>Status: Accepted</p>
+  </div>
+</div>
+
+<div id="completed" class="tab-content card">
+  <div class="section-title">Completed Swaps</div>
+  <div class="item">
+    <p><strong>Sent:</strong> Floral Dress</p>
+    <p><strong>Received:</strong> Denim Overalls</p>
+    <p><strong>Swap Partner:</strong> @emilyx</p>
+    <p>Date: 2025-06-15</p>
+  </div>
+</div>
+
+<% if (currUser) { %>
+  <div class="logout-container">
+    <a href="/logout" class="logout-button">Log Out</a>
+  </div>
+<% } %>
+
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      tabContents.forEach(c => c.classList.remove('active'));
+      document.getElementById(tab.dataset.tab).classList.add('active');
+    });
+  });
+</script>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: #2c004c;
+    color: #fff;
+  }
+
+  .header {
+    background: transparent;
+    color: #ffffff;
+    padding: 20px 30px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 25px;
+    border: 1px solid #ffffff33;
+  }
+
+  .card {
+    background: #ffffff10;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+    padding: 25px 30px;
+    margin-bottom: 30px;
+    transition: box-shadow 0.3s;
+    color: #ffffff;
+    backdrop-filter: blur(6px);
+  }
+
+  .card:hover {
+    box-shadow: 0 6px 18px rgba(255, 255, 255, 0.2);
+  }
+
+  .tabs-container {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    padding: 10px 18px;
+    background: #ffffff22;
+    color: #ffffffcc;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .tab:hover {
+    background: #ffffff33;
+  }
+
+  .tab.active {
+    background: #ffffff;
+    color: #2c004c;
+  }
+
+  .tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .item {
+    border-bottom: 1px solid #ffffff33;
+    padding: 15px 0;
+  }
+
+  .item:last-child {
+    border-bottom: none;
+  }
+
+  .section-title {
+    font-size: 1.3em;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #ffffff;
+  }
+
+  .action-button {
+    padding: 10px 20px;
+    background-color: #ffffff;
+    color: #2c004c;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 10px;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .action-button:hover {
+    background-color: #dddddd;
+    color: #1c0030;
+  }
+
+  .logout-container {
+    text-align: center;
+    margin-top: 30px;
+  }
+
+  .logout-button {
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: bold;
+    background-color: #ffffff;
+    color: #2c004c;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  .logout-button:hover {
+    background-color: #dddddd;
+    color: #1c0030;
+  }
+
+  @media (max-width: 768px) {
+    body {
+      padding: 15px;
+    }
+
+    .header {
+      font-size: 1.2em;
+      padding: 15px;
+    }
+
+    .card {
+      padding: 20px;
+    }
+
+    .tabs {
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tab {
+      width: 100%;
+      text-align: center;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .header h1 {
+      font-size: 1.4em;
+    }
+
+    .section-title {
+      font-size: 1.1em;
+    }
+  }
+</style>

@@ -1,0 +1,200 @@
+<% layout("/layouts/boilerplate") %>
+
+<style>
+    #filters-container {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    #filters {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        overflow-x: auto;
+        white-space: nowrap;
+        padding: 1rem;
+        gap: 1rem;
+        flex-grow: 1;
+    }
+
+    .filter, .All {
+        text-align: center;
+        margin: 0.5rem 0.5rem 0 0.5rem;
+        opacity: 0.7;
+        white-space: nowrap;
+    }
+
+    .filter:hover, .All:hover {
+        opacity: 1;
+        cursor: pointer;
+    }
+
+    .tax-toggle {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid white;
+        border-radius: 1rem;
+        height: 3.5rem;
+        padding: 1rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+        margin: -0.5rem 0.5rem 0 0.5rem;
+    }
+
+    .tax-toggle-mobile {
+        display: none;
+    }
+
+    .tax-toggle input {
+        background-color: white !important;
+    }
+
+    #flexSwitchCheckDefault:checked {
+        background-color: blue !important;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    #filters::-webkit-scrollbar {
+        display: none;
+    }
+
+    #filters {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+
+<div id="filters-container">
+    <div id="filters">
+        <div class="All">
+            <a style="text-decoration: none; color: white;" href="/listings">
+                <div><img width="30" height="30" src="https://img.icons8.com/carbon-copy/100/FFFFFF/all.png" alt="all"/></div>
+                <p>All</p>
+            </a>
+        </div>
+        <div class="filter" data-category="tops">
+            <div><img width="30" height="30" src="https://img.icons8.com/external-solidglyph-m-oki-orlando/32/FFFFFF/external-Shirt-woman-fashion-solidglyph-m-oki-orlando.png"/></div>
+            <p>tops</p>
+        </div>
+        <div class="filter" data-category="tshirts">
+            <div><img width="30" height="30" src="https://img.icons8.com/ios/50/FFFFFF/t-shirt.png"/></div>
+            <p>tshirts</p>
+        </div>
+        <div class="filter" data-category="jeans">
+            <div><img width="30" height="30" src="https://img.icons8.com/ios/50/FFFFFF/jeans.png"/></div>
+            <p>jeans</p>
+        </div>
+        <div class="filter" data-category="dresses">
+            <div><img width="30" height="30" src="https://img.icons8.com/ios/50/FFFFFF/dress-front-view.png"/></div>
+            <p>dresses</p>
+        </div>
+        <div class="filter" data-category="jackets">
+            <div><img width="30" height="30" src="https://img.icons8.com/ios/50/FFFFFF/jacket.png"/></div>
+            <p>jackets</p>
+        </div>
+        <div class="filter" data-category="ethnic-wear">
+            <div><img width="30" height="30" src="https://img.icons8.com/ios/50/FFFFFF/kokoshnik.png"/></div>
+            <p>ethnic-wear</p>
+        </div>
+        <div class="filter" data-category="sweaters">
+            <div><img width="30" height="30" src="https://img.icons8.com/ios/50/FFFFFF/sweater.png"/></div>
+            <p>sweaters</p>
+        </div>
+        <div class="filter" data-category="skirts">
+            <div><img width="30" height="30" src="https://img.icons8.com/ios/50/FFFFFF/skirt.png"/></div>
+            <p>skirts</p>
+        </div>
+        <div class="filter" data-category="kids">
+            <div><img width="30" height="30" src="https://img.icons8.com/ios/50/FFFFFF/clothes.png"/></div>
+            <p>kids</p>
+        </div>
+        <div class="filter" data-category="winter">
+            <div><img width="30" height="30" src="https://img.icons8.com/external-kmg-design-detailed-outline-kmg-design/64/FFFFFF/external-scarf-winter-kmg-design-detailed-outline-kmg-design.png"/></div>
+            <p>winter</p>
+        </div>
+        <div class="filter" data-category="summer">
+            <div><img width="30" height="30" src="https://img.icons8.com/dotty/80/FFFFFF/summer.png"/></div>
+            <p>summer</p>
+        </div>
+    </div>
+
+    <div class="tax-toggle">
+        <div class="form-check-reverse form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault">
+            <label class="form-check-label" for="flexSwitchCheckDefault">
+                <span class="tax-toggle-pc">Display total after taxes</span>
+                <img class="tax-toggle-mobile" width="40" height="40" src="https://img.icons8.com/external-others-nixx-design/67/FFFFFF/external-taxes-icon-currency-lineal-others-nixx-design.png"/>
+            </label>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1 mt-3" id="listingContainer">
+    <% for (let listing of allListings) { 
+        const categories = Array.isArray(listing.category) ? listing.category.join(',') : listing.category || "";
+        const price = listing.price || 0;
+        const imageUrl = listing.image?.url || (listing.images && listing.images[0]?.url) || "";
+    %>
+    <div class="col listing-wrapper" data-categories="<%= categories %>">
+        <a href="/listings/<%= listing._id %>" style="text-decoration: none;">
+            <div class="card listing-card">
+                <img src="<%= imageUrl %>?t=<%= Date.now() %>" class="card-img-top" alt="listing-image" style="height: 20rem;">
+                <div class="card-img-overlay">
+                    <h5 class="card-title"><%= listing.title %></h5>
+                    <p class="card-text"><%= listing.description %></p>
+                    <p class="card-text"><%= listing.location %>, <%= listing.country %></p>
+                </div>
+                <div class="card-body">
+                    <p class="card-text"><b><%= listing.title %></b></p>
+                    <p class="without-tax"><%= price.toLocaleString('en-IN') %>120 points</p>
+                    <p class="with-tax hidden">&#8377;<%= (price * 1.18).toLocaleString('en-IN') %>/ night GST invoice</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <% } %>
+</div>
+
+<script>
+    let taxToggle = document.getElementById("flexSwitchCheckDefault");
+    let withTax = document.getElementsByClassName("with-tax");
+    let withoutTax = document.getElementsByClassName("without-tax");
+
+    taxToggle.addEventListener('click', () => {
+        for (let i = 0; i < withTax.length; i++) {
+            withTax[i].classList.toggle('hidden');
+        }
+        for (let i = 0; i < withoutTax.length; i++) {
+            withoutTax[i].classList.toggle('hidden');
+        }
+    });
+
+    const filterButtons = document.querySelectorAll('.filter');
+    const allListings = document.querySelectorAll('.listing-wrapper');
+
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const filterText = button.dataset.category || 'all';
+
+            allListings.forEach(listing => {
+                const categories = listing.getAttribute('data-categories').split(',');
+                if (filterText === 'all' || categories.includes(filterText)) {
+                    listing.style.display = 'block';
+                } else {
+                    listing.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    taxToggle.addEventListener('change', function () {
+        const taxToggleDiv = document.querySelector('.tax-toggle');
+        taxToggleDiv.style.backgroundColor = this.checked ? '#915594' : '';
+    });
+</script>

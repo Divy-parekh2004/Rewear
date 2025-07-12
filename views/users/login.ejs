@@ -1,0 +1,53 @@
+<% layout("/layouts/boilerplate") %>
+
+<div class="form-wrapper">
+    <div class="form-container">
+        <h3 class="text-center mb-4">Login to ArcadiaLuxe</h3>
+
+        <% if (error && error.length > 0) { %>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <%= error %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+
+        <% if (success && success.length > 0) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <%= success %>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <% } %>
+
+        <form action="/login" method="post" novalidate class="needs-validation">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" name="username" id="username" class="form-control" required>
+                <div class="invalid-feedback">Please enter your username.</div>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" name="password" id="password" class="form-control" required>
+                <div class="invalid-feedback">Please enter your password.</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label d-block">Role</label>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="role" id="roleUser" value="user" required>
+                    <label class="form-check-label" for="roleUser">User</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="role" id="roleAdmin" value="admin" required>
+                    <label class="form-check-label" for="roleAdmin">Admin</label>
+                </div>
+                <div class="invalid-feedback">Please select a role.</div>
+            </div>
+
+            <div class="mt-4">
+                <button class="btn btn-success w-100" type="submit">Login</button>
+                <p class="mt-3 text-center">Don't have an account? <a href="/signup">Sign Up Here</a></p>
+            </div>
+        </form>
+    </div>
+</div>

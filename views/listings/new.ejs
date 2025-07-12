@@ -1,0 +1,231 @@
+<% layout("/layouts/boilerplate") %>
+
+<style>
+  .item-form {
+    max-width: 700px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .item-form h2 {
+    text-align: center;
+    margin-bottom: 1.8rem;
+    color: #333;
+    font-size: 1.8rem;
+    font-weight: 600;
+  }
+
+  .item-form label {
+    font-weight: 500;
+    margin-top: 1rem;
+    display: block;
+    color: #444;
+  }
+
+  .item-form input[type="text"],
+  .item-form textarea,
+  .item-form select {
+    width: 100%;
+    padding: 0.75rem;
+    margin-top: 0.3rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+  }
+
+  .item-form input[type="file"] {
+    margin-top: 0.5rem;
+  }
+
+  .item-form input[type="text"]:focus,
+  .item-form textarea:focus,
+  .item-form select:focus {
+    border-color: #28a745;
+    outline: none;
+  }
+
+  .item-form .form-group {
+    margin-bottom: 1.2rem;
+  }
+
+  #image-preview {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  #image-preview img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
+
+  .item-form button {
+    width: 100%;
+    padding: 1rem;
+    margin-top: 2rem;
+    font-size: 1.1rem;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.25s ease;
+  }
+
+  .item-form button:hover {
+    background-color: #218838;
+  }
+
+  @media (max-width: 600px) {
+    .item-form {
+      padding: 1rem;
+    }
+  }
+</style>
+
+<form id="itemForm" method="POST" action="/listings" enctype="multipart/form-data" class="item-form">
+  <h2>Add New Item – ReWear</h2>
+
+  <div class="form-group">
+    <label for="images">Upload Images</label>
+    <input type="file" id="images" name="listing[images]" accept="image/*" multiple required>
+    <div id="image-preview"></div>
+  </div>
+
+  <div class="form-group">
+    <label for="title">Title</label>
+    <input type="text" id="title" name="listing[title]" placeholder="e.g. Men’s Casual T-Shirt" required>
+  </div>
+
+  <div class="form-group">
+    <label for="description">Description</label>
+    <textarea id="description" name="listing[description]" rows="4" placeholder="Include fabric, brand, condition notes..." required></textarea>
+  </div>
+
+  <div class="form-group">
+    <label for="category">Category</label>
+    <select id="category" name="listing[category]" required>
+      <option value="">Select category</option>
+      <option value="Men">Men</option>
+      <option value="Women">Women</option>
+      <option value="Unisex">Unisex</option>
+      <option value="Kids">Kids</option>
+      <option value="Baby">Baby</option>
+      <option value="Accessories">Accessories</option>
+      <option value="Footwear">Footwear</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="type">Type</label>
+    <select id="type" name="listing[type]" required>
+      <option value="">Select type</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="size">Size</label>
+    <select id="size" name="listing[size]" required>
+      <option value="">Select size</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="condition">Condition</label>
+    <select id="condition" name="listing[condition]" required>
+      <option value="">Select condition</option>
+      <option value="new">New with tags</option>
+      <option value="like-new">Like new</option>
+      <option value="gently-used">Gently used</option>
+      <option value="visible-wear">Visible wear</option>
+      <option value="damaged">Damaged but usable</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="tags">Tags (comma-separated)</label>
+    <input type="text" id="tags" name="listing[tags]" placeholder="e.g. summer, cotton, floral">
+  </div>
+
+  <button type="submit">List Item</button>
+</form>
+
+<script>
+  const categoryToTypes = {
+    "Men": ["T-shirt", "Shirt", "Jacket", "Jeans", "Shorts"],
+    "Women": ["Top", "Dress", "Skirt", "Blazer", "Jeans"],
+    "Unisex": ["T-shirt", "Sweatshirt", "Hoodie", "Jacket"],
+    "Kids": ["Shirt", "T-shirt", "Pants", "Dress"],
+    "Baby": ["Onesie", "Sleeper", "Set", "Romper"],
+    "Accessories": ["Bag", "Belt", "Scarf", "Hat", "Jewelry"],
+    "Footwear": ["Sneakers", "Boots", "Sandals", "Heels", "Flats"]
+  };
+
+  const sizeOptions = {
+    "default": ["XS", "S", "M", "L", "XL", "XXL", "XXXL"],
+    "Kids": ["4", "5", "6", "7", "8", "10", "12", "14"],
+    "Baby": ["Newborn", "0-3M", "3-6M", "6-9M", "12M", "18M", "2T", "3T", "4T", "5T"]
+  };
+
+  const categorySelect = document.getElementById('category');
+  const typeSelect = document.getElementById('type');
+  const sizeSelect = document.getElementById('size');
+  const imageInput = document.getElementById('images');
+  const imagePreview = document.getElementById('image-preview');
+
+  categorySelect.addEventListener('change', function () {
+    const category = this.value;
+
+    typeSelect.innerHTML = '<option value="">Select type</option>';
+    (categoryToTypes[category] || []).forEach(type => {
+      const option = document.createElement('option');
+      option.value = type;
+      option.textContent = type;
+      typeSelect.appendChild(option);
+    });
+
+    sizeSelect.innerHTML = '<option value="">Select size</option>';
+    const sizes = sizeOptions[category] || sizeOptions["default"];
+    sizes.forEach(size => {
+      const option = document.createElement('option');
+      option.value = size;
+      option.textContent = size;
+      sizeSelect.appendChild(option);
+    });
+  });
+
+  imageInput.addEventListener('change', function () {
+    imagePreview.innerHTML = "";
+    Array.from(this.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        imagePreview.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
+  // Optional: prevent default form submission and show alert (for dev only)
+  // Remove this block in production
+  /*
+  document.getElementById('itemForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    alert('Item submitted successfully!');
+    this.reset();
+    imagePreview.innerHTML = "";
+    typeSelect.innerHTML = '<option value="">Select type</option>';
+    sizeSelect.innerHTML = '<option value="">Select size</option>';
+  });
+  */
+</script>
