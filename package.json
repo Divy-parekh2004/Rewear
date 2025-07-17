@@ -1,14 +1,28 @@
 {
+  "name": "rewear-app",
+  "version": "1.0.0",
+  "description": "Rewear - Clothing Swap App",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
-    "cloudinary": "^2.7.0",
+    "cloudinary": "^1.30.0",
+    "compression": "^1.8.0",
     "connect-flash": "^0.1.1",
     "connect-mongo": "^5.1.0",
     "dotenv": "^17.2.0",
     "ejs-mate": "^4.0.0",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
+    "helmet": "^8.1.0",
+    "joi": "^17.13.3",
     "method-override": "^3.0.0",
     "mongoose": "^8.16.3",
+    "morgan": "^1.10.0",
     "multer": "^2.0.1",
     "multer-storage-cloudinary": "^4.0.0",
     "passport": "^0.7.0",

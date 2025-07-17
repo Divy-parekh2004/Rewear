@@ -1,6 +1,11 @@
 if (process.env.NODE_ENV != "production") {
     require('dotenv').config();
 }
+
+
+// const express = require('express');
+// const router = express.Router();
+// const Swap = require('../models/swap');
 const express = require("express");
 const app = express()
 const mongoose = require("mongoose");
@@ -8,9 +13,10 @@ const Listing = require("./models/listing.js");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
-// const wrapAsync = require("./utils/wrapAsync.js");
-// const ExpressError = require("./utils/ExpressError.js");
-// const { listingSchema, reviewSchema } = require("./schema.js");
+const wrapAsync = require("./utils/wrapAsync.js");
+const ExpressError = require("./utils/ExpressError.js");
+
+const { listingSchema, reviewSchema } = require("./schema.js");
 const Review = require("./models/review.js");
 const session = require("express-session");
 const flash = require("connect-flash");
@@ -24,11 +30,37 @@ const MongoStore = require('connect-mongo');
 const UserPoints = require("./models/userPoints.js");
 const Item = require("./models/item.js");
 const Swap = require("./models/swap.js");
+const { isLoggedIn, isAdmin, isUser, validateReview, isAuthor } = require("./utils/middleware.js");
+const helmet = require("helmet");
+const compression = require("compression");
+
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "default-src": ["'self'"],
+        "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://img.icons8.com"],
+        "script-src": ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://code.jquery.com"],
+        "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
+        "font-src": ["'self'", "https://fonts.gstatic.com"],
+        "connect-src": ["'self'", "https://api.maptiler.com"],
+        "object-src": ["'none'"]
+      },
+    },
+  })
+);
+
+app.use(compression()); // to gzip responses
 
 
+const { cloudinary } = require("./cloudConfig.js");
 
-// const dbUrl  = process.env.ATLASDB_URL;
-const dbUrl = "mongodb://127.0.0.1:27017/ReWear";
+
+const dbUrl  = process.env.ATLASDB_URL;
+// const dbUrl = "mongodb://127.0.0.1:27017/ReWear";
+// const methodOverride = require('method-override');
+app.use(methodOverride('_method'));
 
 
 main()
@@ -98,21 +130,13 @@ app.use((req, res, next) => {
 
 // ------------------------------------------   Functions   ----------------------------------------------------------
 
-function isAdmin(req, res, next) {
-    if (req.isAuthenticated() && req.user.role === 'admin') {
-        return next();
-    }
-    req.flash("error", "You do not have permission to access this page.");
-    res.redirect("/listings");
-}
-
-
-
-
-
-
-
-
+// function isAdmin(req, res, next) {
+//     if (req.isAuthenticated() && req.user.role === 'admin') {
+//         return next();
+//     }
+//     req.flash("error", "You do not have permission to access this page.");
+//     res.redirect("/listings");
+// }
 
 // -----------------------------------------------  Listing  ----------------------------------------------------------------
 
@@ -131,8 +155,8 @@ app.get("/", async (req, res) => {
                 { country: searchRegex }
             ]
         });
-    } else {
-        allListings = await Listing.find({});
+    } else { allListings = await Listing.find({})
+  .populate('owner', 'username points');
     }
 
     res.render("./listings/index.ejs", { allListings });
@@ -140,20 +164,62 @@ app.get("/", async (req, res) => {
 
 
 // index route 
-app.get("/listings", (async (req, res) => {
+// Combined and final version of GET /listings
+app.get("/listings", async (req, res) => {
+  try {
     const { query } = req.query;
-    let searchRegex = new RegExp(query, 'i');
+    let searchFilter = {};
 
-    const allListings = await Listing.find({
+    if (query) {
+      const searchRegex = new RegExp(query, 'i');
+      searchFilter = {
         $or: [
-            { title: searchRegex },
-            { location: searchRegex },
-            { country: searchRegex }
+          { title: searchRegex },
+          { location: searchRegex },
+          { country: searchRegex }
         ]
+      };
+    }
+
+    const allListings = await Listing.find(searchFilter).populate("owner");
+
+    // Get all unique owner IDs
+    const ownerIds = allListings.map(listing => listing.owner?._id).filter(Boolean);
+
+    const swaps = await Swap.find({
+      $or: [
+        { senderId: { $in: ownerIds } },
+        { receiverId: { $in: ownerIds } }
+      ]
     });
 
-    res.render("./listings/index.ejs", { allListings });
-}));
+    // Compute points per user
+    const pointsMap = {};
+    swaps.forEach(swap => {
+      [swap.senderId, swap.receiverId].forEach(userId => {
+        const id = userId.toString();
+        if (!pointsMap[id]) pointsMap[id] = 1000;
+        if (swap.status === "approved") pointsMap[id] += 200;
+        else if (swap.status === "rejected") pointsMap[id] += 100;
+        // pending = 0
+      });
+    });
+
+    // Attach computed points to listing.owner
+    allListings.forEach(listing => {
+      const owner = listing.owner;
+      if (owner) {
+        const id = owner._id.toString();
+        owner.points = pointsMap[id] || 1000; // Default base
+      }
+    });
+
+    res.render("listings/index", { allListings });
+  } catch (err) {
+    console.error("Error loading listings:", err);
+    res.status(500).send("Server error");
+  }
+});
 
 
 
@@ -240,7 +306,7 @@ app.post("/listings", upload.array("listing[images]"), async (req, res, next) =>
         const newListing = new Listing(listing);
 
         // Optional: assign current user if using auth
-        // newListing.owner = req.user._id;
+        newListing.owner = req.user._id;
 
         await newListing.save();
         req.flash("success", "New listing created!");
@@ -255,64 +321,103 @@ app.post("/listings", upload.array("listing[images]"), async (req, res, next) =>
 
 
 // edit route 
+// EDIT routes with dynamic edit form options
+app.get("/listings/:id/edit", isLoggedIn, async (req, res) => {
+  const { id } = req.params;
+  const listing = await Listing.findById(id);
+  if (!listing) {
+    req.flash("error", "Listing you requested does not exist");
+    return res.redirect("/listings");
+  }
+  // Predefined option sets
+  const categories = ["tops","tshirts","jeans","dresses","jackets","ethnic-wear","sweaters","skirts","kids","winter","summer"];
+  const types = ["casual","formal","sportswear","outerwear","footwear"];
+  const sizes = ["XS","S","M","L","XL","XXL"];
+  const conditions = ["new","like new","good","fair","poor"];
 
-app.get("/listings/:id/edit", (async (req, res) => {
-    const { id } = req.params;
-    const listing = await Listing.findById(id);
+  res.render("listings/edit.ejs", {
+    listing,
+    categories,
+    types,
+    sizes,
+    conditions
+  });
+});
+
+app.put("/listings/:id", isLoggedIn, upload.single("listing[image]"), async (req, res) => {
+  const { id } = req.params;
+  const data = req.body.listing;
+  data.tags = typeof data.tags === 'string' ? data.tags.split(',').map(t => t.trim()) : data.tags;
+
+  const listing = await Listing.findByIdAndUpdate(id, data, { new: true });
+
+  if (req.file) {
+    listing.images = [{ url: req.file.path, filename: req.file.filename }];
+  }
+
+  await listing.save();
+  req.flash("success", "Listing updated!");
+  res.redirect(`/listings/${id}`);
+});
+
+app.delete("/listings/:id", isLoggedIn, async (req, res) => {
+  const { id } = req.params;
+  await Listing.findByIdAndDelete(id);
+  req.flash("success", "Listing deleted!");
+  res.redirect("/listings");
+});
+// POST /listings/:id/reviews — Add a review to a listing
+app.post(
+  "/listings/:id/reviews",
+  isLoggedIn,
+  validateReview,
+  wrapAsync(async (req, res) => {
+    const listing = await Listing.findById(req.params.id);
     if (!listing) {
-        req.flash("error", "Listing you requested does not exist");
-        res.redirect("/listings")
-    }
-    // let originalImageUrl = listing.image.url;
-    // originalImageUrl = originalImageUrl.replace("/upload","/upload/w_250");
-    res.render("./listings/edit.ejs", { listing });
-
-}))
-
-
-app.put("/listings/:id", upload.single("listing[image]"), (async (req, res) => {
-    const { id } = req.params;
-    const updatedData = req.body.listing;
-
-    // Find the listing and update its non-image fields
-    const listing = await Listing.findByIdAndUpdate(id, updatedData, { new: true });
-
-    // Only update the image if a new file is uploaded
-    if (req.file) {
-        listing.image = {
-            url: req.file.path,
-            filename: req.file.filename
-        };
+      req.flash("error", "Listing not found.");
+      return res.redirect("/listings");
     }
 
+    const review = new Review(req.body.review);
+    review.author = req.user._id;
+    await review.save();
+
+    listing.reviews.push(review);
     await listing.save();
-    req.flash("success", "Listing updated!");
+
+    req.flash("success", "Review added!");
+    res.redirect(`/listings/${listing._id}`);
+  })
+);
+
+app.delete(
+  "/listings/:id/reviews/:reviewId",
+  isLoggedIn,
+  isAuthor,
+  wrapAsync(async (req, res) => {
+    const { id, reviewId } = req.params;
+
+    // Remove review ID from the listing's `reviews` array
+    await Listing.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
+
+    // Delete the actual review document
+    await Review.findByIdAndDelete(reviewId);
+
+    req.flash("success", "Review deleted.");
     res.redirect(`/listings/${id}`);
-}));
-
-
-
-// delete route 
-
-app.delete("/listings/:id", (async (req, res) => {
-    const { id } = req.params;
-    let deletedList = await Listing.findByIdAndDelete(id);
-    console.log(deletedList);
-    req.flash("success", "Listing deleted!");
-    res.redirect("/listings");
-
-}))
+  })
+);
 
 
 // --------------------------------------------------------------- Divy Functionality -------------------------------------------
 
 // API: Get user profile and points
-app.get('/api/user/:id', async (req, res) => {
+app.get('/user/:id/profile', async (req, res) => {
     try {
         const userId = req.params.id;
         const user = await UserPoints.findById(userId).select('name email points');
         if (!user) return res.status(404).send("User not found");
-        res.json(user);
+        res.render('users/profile.ejs', { user });
     } catch (err) {
         console.error("Error fetching user profile:", err);
         res.status(500).send("Server error");
@@ -320,37 +425,72 @@ app.get('/api/user/:id', async (req, res) => {
 });
 
 // API: Get user items
-app.get('/api/user/:id/items', async (req, res) => {
+app.get('/user/:id/items', async (req, res) => {
     try {
         const userId = req.params.id;
         const items = await Item.find({ userId });
-        res.json(items);
+       res.render('users/userItems.ejs', { items, user: req.user });
+
     } catch (err) {
         console.error("Error fetching user items:", err);
         res.status(500).send("Server error");
     }
 });
 
+
 // API: Get user swaps
-app.get('/api/user/:id/swaps', async (req, res) => {
-    try {
-        const userId = req.params.id;
-        const swaps = await Swap.find({
-            $or: [{ senderId: userId }, { receiverId: userId }]
-        });
-        res.json(swaps);
-    } catch (err) {
-        console.error("Error fetching user swaps:", err);
-        res.status(500).send("Server error");
-    }
+// GET swap form (before rendering the form)
+// GET /user/:id/swaps
+app.get('/user/:id/swaps', async (req, res) => {
+  try {
+    const { id: userId } = req.params;
+
+    // Get all items created by this user
+    const userItems = await Listing.find({ owner: userId });
+
+    // Get all items in the system
+    const allItems = await Listing.find({});
+
+    // 🟡 FIX: Get all users WITH their role field
+  const allUsers = await User.find({ role: 'user' }, 'username role');
+
+
+    // Get all swaps where the user is sender or receiver
+    const swaps = await Swap.find({ 
+        $or: [{ senderId: userId }, { receiverId: userId }]
+    })
+    .populate('senderId', 'username role')
+    .populate('receiverId', 'username role')
+    .populate('senderItemId', 'title')
+    .populate('receiverItemId', 'title');
+
+    // Render the swap view
+    res.render('users/userSwaps.ejs', {
+        swaps,
+        user: req.user,
+        allUsers,     // all users with role info
+        allItems,     // for receiver item dropdown
+        userItems     // for sender item dropdown
+    });
+
+  } catch (error) {
+    console.error('Error loading swaps:', error);
+    res.status(500).send('Server Error');
+  }
 });
 
+
+
+
+
 // API: Upload new item
-app.post('/api/items', async (req, res) => {
+
+app.post('/user/:id/items', async (req, res) => {
     try {
-        const { userId, title, description, size, condition, imageUrl } = req.body;
+        const { id } = req.params;
+        const { title, description, size, condition, imageUrl } = req.body;
         const newItem = new Item({
-            userId,
+            userId: id,
             title,
             description,
             size,
@@ -358,23 +498,57 @@ app.post('/api/items', async (req, res) => {
             imageUrl
         });
         await newItem.save();
-        res.status(201).json(newItem);
+        req.flash("success", "Item added!");
+        res.redirect(`/user/${id}/items`);
     } catch (err) {
-        console.error("Error uploading item:", err);
+        console.error("Error adding item:", err);
         res.status(500).send("Server error");
     }
 });
 
 // API: Update item
-app.put('/api/items/:id', async (req, res) => {
+app.put('/user/:userId/items/:itemId', async (req, res) => {
     try {
-        const itemId = req.params.id;
+        const { userId, itemId } = req.params;
         const updateData = req.body;
-        const updatedItem = await Item.findByIdAndUpdate(itemId, updateData, { new: true });
-        if (!updatedItem) return res.status(404).send("Item not found");
-        res.json(updatedItem);
+
+        const item = await Item.findOneAndUpdate(
+            { _id: itemId, userId: userId }, // ensure the item belongs to the user
+            updateData,
+            { new: true }
+        );
+
+        if (!item) {
+            req.flash("error", "Item not found or unauthorized");
+            return res.redirect(`/user/${userId}/items`);
+        }
+
+        req.flash("success", "Item updated successfully!");
+        res.redirect(`/user/${userId}/items`);
     } catch (err) {
         console.error("Error updating item:", err);
+        req.flash("error", "Server error while updating item");
+        res.redirect(`/user/${req.params.userId}/items`);
+    }
+});
+app.post('/user/:id/swaps', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { receiverId, senderItemId, receiverItemId, status } = req.body;
+
+        const newSwap = new Swap({
+            senderId: id,
+            receiverId,
+            senderItemId,
+            receiverItemId,
+            status: status || "pending"
+        });
+
+        await newSwap.save();
+        req.flash("success", "Swap created!");
+        res.redirect(`/user/${id}/swaps`);
+    } catch (err) {
+        console.error("Error creating swap:", err);
         res.status(500).send("Server error");
     }
 });
@@ -459,23 +633,95 @@ app.get("/logout", (req, res, next) => {
         res.redirect("/listings");
     });
 });
+app.get("/user/dashboard", async (req, res) => {
+  if (!req.isAuthenticated() || req.user.role !== "user") {
+    req.flash("error", "Unauthorized access");
+    return res.redirect("/login");
+  }
 
-app.get("/user/dashboard", (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "user") {
-        req.flash("error", "Unauthorized access");
-        return res.redirect("/login");
-    }
-    res.render("users/userDashboard.ejs", { user: req.user });
+  try {
+    const userItems = await Listing.find({ owner: req.user._id });
+
+    const allSwaps = await Swap.find({
+      $or: [
+        { senderId: req.user._id },
+        { receiverId: req.user._id }
+      ]
+    }).populate("senderItemId receiverItemId senderId receiverId");
+
+    const completedSwaps = allSwaps.filter(
+      (swap) => swap.status === "approved" || swap.status === "rejected"
+    );
+
+    const pendingSwaps = allSwaps.filter(
+      (swap) => swap.status === "pending"
+    );
+
+    // 🧮 Calculate points:
+    let points = 1000;
+    allSwaps.forEach(swap => {
+      if (swap.status === "approved") points += 200;
+      else if (swap.status === "rejected") points += 100;
+      // pending = 0
+    });
+
+    // Override points in user object just for rendering
+    const userWithPoints = {
+      ...req.user.toObject(), // in case it's a Mongoose doc
+      points
+    };
+
+    res.render("users/userDashboard.ejs", {
+      user: userWithPoints,
+      currUser: req.user,
+      userItems,
+      completedSwaps,
+      pendingSwaps
+    });
+  } catch (err) {
+    console.error("User dashboard error:", err);
+    req.flash("error", "Failed to load dashboard.");
+    res.redirect("/listings");
+  }
 });
 
-app.get("/admin/dashboard", (req, res) => {
+app.get("/admin/dashboard", async (req, res) => {
     if (!req.isAuthenticated() || req.user.role !== "admin") {
         req.flash("error", "Unauthorized access");
         return res.redirect("/login");
     }
-    res.render("users/adminDashboard.ejs", { user: req.user });
+
+    try {
+        const swaps = await Swap.find({})
+            .populate("senderId", "username")
+            .populate("receiverId", "username")
+            .populate("senderItemId", "title")
+            .populate("receiverItemId", "title");
+
+       const adminUser = req.user; // assuming middleware sets req.user
+
+    res.render("users/adminDashboard", {
+      swaps,
+      user: adminUser,
+      currUser: adminUser
+    });
+  } catch (err) {
+    console.error("Admin dashboard error:", err);
+    res.status(500).send("Error loading admin dashboard");
+  }
 });
 
+app.post("/admin/swaps/:id/approve", async (req, res) => {
+    const swapId = req.params.id;
+    await Swap.findByIdAndUpdate(swapId, { status: "approved" });
+    res.redirect("/admin/dashboard");
+});
+
+app.post("/admin/swaps/:id/reject", async (req, res) => {
+    const swapId = req.params.id;
+    await Swap.findByIdAndUpdate(swapId, { status: "rejected" });
+    res.redirect("/admin/dashboard");
+});
 
 // -----------------------------------------------    MW    -----------------------------------------------------------------------------------------
 

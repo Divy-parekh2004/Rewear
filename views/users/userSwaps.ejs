@@ -1,0 +1,123 @@
+<% layout("/layouts/boilerplate") %>
+<h1>My Swaps</h1>
+
+<% const pendingSwaps = swaps.filter(s => s.status === 'pending'); %>
+<% if (pendingSwaps.length === 0) { %>
+    <p>No swaps found.</p>
+<% } else { %>
+    <ul>
+        <% pendingSwaps.forEach(swap => { %>
+            <li>
+                <strong>Swap Between:</strong> <%= swap.senderId?.username || 'Unknown' %> ➡️ <%= swap.receiverId?.username || 'Unknown' %><br>
+                <strong>Sender Item:</strong> <%= swap.senderItemId?.title || 'Deleted Item' %><br>
+                <strong>Receiver Item:</strong> <%= swap.receiverItemId?.title || 'Deleted Item' %><br>
+
+                <strong>Status:</strong> 
+                <% if (swap.status === 'pending') { %>
+                    <span style="color: #ffeb3b;"><%= swap.status %></span>
+                <% } else if (swap.status === 'approved') { %>
+                    <span style="color: green;"><%= swap.status %></span>
+                <% } else if (swap.status === 'rejected') { %>
+                    <span style="color: red;"><%= swap.status %></span>
+                <% } else { %>
+                    <%= swap.status %>
+                <% } %>
+                <br><small>Created at: <%= new Date(swap.createdAt).toLocaleString() %></small>
+            </li>
+            <hr>
+        <% }) %>
+    </ul>
+<% } %>
+
+
+<h2>Create New Swap</h2>
+<form action="/user/<%= user._id %>/swaps" method="POST" class="swap-form">
+ <!-- Receiver -->
+<div class="form-group">
+  <label for="receiverId">Receiver:</label>
+  <select name="receiverId" id="receiverId" required onchange="filterReceiverItems()">
+    <option value="">-- Select Receiver --</option>
+    <% allUsers.forEach(u => {
+         if (u._id.toString() !== user._id.toString() && u.role === 'user') { %>
+      <option value="<%= u._id %>"><%= u.username %></option>
+    <% } }) %>
+  </select>
+</div>
+
+<!-- Sender Item -->
+<div class="form-group">
+  <label for="senderItemId">Your Item to Offer:</label>
+  <select name="senderItemId" id="senderItemId" required>
+    <% if (userItems.length === 0) { %>
+      <option disabled selected>You have no items. Add one first.</option>
+    <% } else { %>
+      <% userItems.forEach(item => { %>
+        <option value="<%= item._id %>"><%= item.title %></option>
+      <% }) %>
+    <% } %>
+  </select>
+</div>
+
+<!-- Receiver Item -->
+<div class="form-group">
+  <label for="receiverItemId">Item You Want:</label>
+  <select name="receiverItemId" id="receiverItemId" required>
+    <% allItems.forEach(item => {
+         if (item.owner && user._id && item.owner.toString() !== user._id.toString()) { %>
+      <option value="<%= item._id %>" data-owner="<%= item.owner %>"><%= item.title %></option>
+    <% } }) %>
+  </select>
+</div>
+
+  <input type="hidden" name="status" value="pending">
+  <button type="submit">Create Swap</button>
+</form>
+<style>
+  .swap-form {
+    background: rgba(255,255,255,0.05);
+    padding: 20px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 500px;
+    margin: 20px auto;
+    color: #fff;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: bold;
+  }
+
+  .form-group select,
+  .form-group input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: none;
+    font-size: 1rem;
+    background-color: #fff;
+    color: #333;
+  }
+
+  button[type="submit"] {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    font-size: 1.1rem;
+    border-radius: 6px;
+    background-color: #ffc107;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  button[type="submit"]:hover {
+    background-color: #ff9800;
+  }
+</style>
