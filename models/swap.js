@@ -1,12 +1,36 @@
 const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
-const swapSchema = new mongoose.Schema({
-    senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'UserPoints', required: true },
-    receiverId: { type: mongoose.Schema.Types.ObjectId, ref: 'UserPoints', required: true },
-    senderItemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Item', required: true },
-    receiverItemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Item', required: true },
-    status: { type: String, default: 'pending' },
-    createdAt: { type: Date, default: Date.now }
+// Define the schema for a swap
+const swapSchema = new Schema({
+  senderId: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
+  receiverId: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
+  senderItemId: {
+    type: Schema.Types.ObjectId,
+    ref: "Listing",
+    required: true
+  },
+  receiverItemId: {
+    type: Schema.Types.ObjectId,
+    ref: "Listing",
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending"
+  }
+}, {
+  timestamps: true  // ✅ Automatically adds createdAt and updatedAt
 });
 
-module.exports = mongoose.model('Swap', swapSchema);
+// Export the model
+module.exports = mongoose.model("Swap", swapSchema);

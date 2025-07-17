@@ -77,31 +77,43 @@
             <h6>Please login to leave a review.</h6>
         <% } %>
     </div>
+<% if (listing.reviews && listing.reviews.length > 0) { %>
+  <hr>
+  <h4><b>All Reviews</b></h4>
+  <div class="row">
+    <% for (let review of listing.reviews) { %>
+      <div class="card review-card mb-3">
+        <div class="card-body">
+          <h5 class="card-title author-name">
+            <span><%= review.author.username[0] %></span>
+            <span>
+              <%= review.author.username %>
+              <% if (listing.owner._id.toString() === review.author._id.toString()) { %>
+                <span class="badge bg-primary">Owner</span>
+              <% } %>
+              <% if (currUser && currUser._id.toString() === review.author._id.toString()) { %>
+                <span class="text-muted">(You)</span>
+              <% } %>
+            </span>
+            <div class="mt-2" style="font-size: 12px;">
+              <%= new Date(review.createdAt).toLocaleString('en-IN') %>
+            </div>
+          </h5>
 
-    <% if (listing.reviews && listing.reviews.length > 0) { %>
-        <hr>
-        <h4>All Reviews</h4>
-        <div class="row">
-            <% for (review of listing.reviews) { %>
-                <div class="card review-card mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title author-name">
-                            <span><%= review.author.username[0] %></span>
-                            <span><%= review.author.username %></span>
-                            <div class="mt-2" style="font-size: 12px;">
-                                <%= review.createdAt.toLocaleString('en-IN') %>
-                            </div>
-                        </h5>
-                        <p class="starability-result" data-rating="<%= review.rating %>"></p>
-                        <p class="card-text"><%= review.comment %></p>
-                    </div>
-                    <% if (currUser) { %>
-                        <form method="post" action="/listings/<%= listing._id %>/reviews/<%= review._id %>?_method=DELETE" class="mb-3">
-                            <button class="btn btn-sm btn-dark">Delete</button>
-                        </form>
-                    <% } %>
-                </div>
-            <% } %>
+          <p class="starability-result" data-rating="<%= review.rating %>"></p>
+          <p class="card-text"><%= review.comment %></p>
         </div>
+
+        <% if (currUser && currUser._id.toString() === review.author._id.toString()) { %>
+          <form method="post" action="/listings/<%= listing._id %>/reviews/<%= review._id %>?_method=DELETE">
+            <button class="btn btn-sm btn-dark review-button mb-3 mt-3">Delete</button>
+          </form>
+        <% } %>
+      </div>
     <% } %>
+  </div>
+<% } else { %>
+  <p>No reviews yet.</p>
+<% } %>
+
 </div>

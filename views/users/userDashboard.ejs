@@ -3,58 +3,121 @@
 <div class="header">
   <h1>Welcome, <%= user.username %>!</h1>
 </div>
+<!-- User Profile Section -->
+<section class="user-profile glass-card">
+  <img
+    src="/images/user-avatar.png"
+    alt="User Avatar"
+    class="user-pic"
+    onerror="this.src='https://img.icons8.com/ios-filled/100/user-male-circle.png';"
+  />
+  <div>
+    <h2>User Dashboard</h2>
+    <p>Welcome, <strong><%= user.username %></strong></p>
+    <p>Email: <%= user.email %></p>
+    <p>Points: <%= user.points %></p>
+  </div>
+</section>
 
-<div class="card">
-  <h2>Profile</h2>
-  <p><strong>Name:</strong> <%= user.username %></p>
-  <p><strong>Email:</strong> <%= user.email %></p>
-  <p><strong>Role:</strong> <%= user.role %></p>
-  <p><strong>Points:</strong> 120</p>
-</div>
 
 <div class="tabs-container">
   <div class="tabs">
     <div class="tab active" data-tab="uploaded">Uploaded Items</div>
-    <div class="tab" data-tab="ongoing">Ongoing Swaps</div>
+    <div class="tab" data-tab="ongoing" data-link="/user/<%= user._id %>/swaps">Ongoing Swaps</div>
     <div class="tab" data-tab="completed">Completed Swaps</div>
   </div>
 </div>
-
+<!-- UPLOADED ITEMS -->
 <div id="uploaded" class="tab-content active card">
   <div class="section-title">Your Uploaded Items</div>
-  <div class="item">
-    <p><strong>Item:</strong> Denim Jacket</p>
-    <p>Status: Available</p>
-  </div>
-  <div class="item">
-    <p><strong>Item:</strong> Vintage Skirt</p>
-    <p>Status: In Swap Request</p>
-  </div>
-  <div class="item">
-    <p><strong>Item:</strong> Graphic Tee</p>
-    <p>Status: Swapped</p>
-  </div>
+  <% if (!userItems || userItems.length === 0) { %>
+    <p>You haven’t uploaded any items yet.</p>
+  <% } else { %>
+    <div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1 g-4 mt-3">
+      <% userItems.forEach(item => {
+        const imageUrl = item.images?.[0]?.url || item.image?.url || 'https://via.placeholder.com/400x300?text=No+Image';
+      %>
+        <div class="col listing-wrapper">
+          <a href="/listings/<%= item._id %>" style="text-decoration: none;">
+            <div class="card listing-card">
+              <img src="<%= imageUrl %>?t=<%= Date.now() %>"
+                   class="card-img-top"
+                   style="height: 20rem; object-fit: cover;">
+              <div class="card-body">
+                <h5 class="card-title"><%= item.title %></h5>
+                <p class="card-text"><%= item.description %></p>
+                <p class="card-text"><small>Category: <%= item.category %></small></p>
+              </div>
+            </div>
+          </a>
+          <div class="mt-2 text-center">
+            <a href="/listings/<%= item._id %>/edit" class="btn btn-sm btn-light">Edit</a>
+            <form action="/listings/<%= item._id %>?_method=DELETE" method="POST" style="display:inline;">
+              <button class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
 </div>
 
+<!-- ONGOING SWAPS (redirect) -->
 <div id="ongoing" class="tab-content card">
   <div class="section-title">Ongoing Swaps</div>
-  <div class="item">
-    <p><strong>You Send:</strong> Vintage Skirt</p>
-    <p><strong>You Receive:</strong> Wool Sweater</p>
-    <p><strong>Swap Partner:</strong> @alex92</p>
-    <p>Status: Accepted</p>
-  </div>
+ <% if (!pendingSwaps || pendingSwaps.length === 0) { %>
+  <p>No ongoing swaps found.</p>
+<% } else { %>
+  <% pendingSwaps.forEach(swap => { %>
+    <div class="item">
+      <p><strong>Sent:</strong> <%= swap.senderItemId?.title || 'Unknown' %></p>
+      <p><strong>Requested:</strong> <%= swap.receiverItemId?.title || 'Unknown' %></p>
+      <p><strong>To:</strong> @<%= swap.receiverId?.username || 'Unknown' %></p>
+      <p><strong>Status:</strong> <span style="color: orange;"><%= swap.status %></span></p>
+      <p><small>Created: <%= new Date(swap.createdAt).toLocaleDateString() %></small></p>
+    </div>
+    <hr>
+  <% }) %>
+<% } %>
+
 </div>
 
+<!-- COMPLETED SWAPS -->
 <div id="completed" class="tab-content card">
   <div class="section-title">Completed Swaps</div>
-  <div class="item">
-    <p><strong>Sent:</strong> Floral Dress</p>
-    <p><strong>Received:</strong> Denim Overalls</p>
-    <p><strong>Swap Partner:</strong> @emilyx</p>
-    <p>Date: 2025-06-15</p>
-  </div>
+  <% if (!completedSwaps || completedSwaps.length === 0) { %>
+    <p>No completed swaps yet.</p>
+  <% } else { %>
+    <% completedSwaps.forEach(swap => { %>
+      <div class="item">
+        <p><strong>Sent:</strong> <%= swap.senderItemId?.title || 'Unknown' %></p>
+        <p><strong>Received:</strong> <%= swap.receiverItemId?.title || 'Unknown' %></p>
+        <p><strong>Partner:</strong>
+          @<%= (swap.senderId._id.toString() === user._id.toString()
+                ? swap.receiverId.username
+                : swap.senderId.username) %>
+        </p>
+        
+   <p><strong>Status:</strong> 
+  <% if (swap.status === 'pending') { %>
+    <span style="color: #ffeb3b;"><strong><%= swap.status %></strong></span>
+  <% } else if (swap.status === 'approved') { %>
+    <span style="color: green;"><strong><%= swap.status %></strong></span>
+  <% } else if (swap.status === 'rejected') { %>
+    <span style="color: red;"><strong><%= swap.status %></strong></span>
+  <% } else { %>
+    <strong><%= swap.status %></strong>
+  <% } %>
+</p>
+
+
+        <p>Date: <%= new Date(swap.updatedAt).toLocaleDateString() %></p>
+      </div>
+      <hr>
+    <% }) %>
+  <% } %>
 </div>
+
 
 <% if (currUser) { %>
   <div class="logout-container">
@@ -68,11 +131,14 @@
 
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
+      const link = tab.dataset.link;
+      if (link) {
+        return void (window.location = link);
+      }
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-
       tabContents.forEach(c => c.classList.remove('active'));
-      document.getElementById(tab.dataset.tab).classList.add('active');
+      document.getElementById(tab.dataset.tab)?.classList.add('active');
     });
   });
 </script>
@@ -205,6 +271,29 @@
     text-align: center;
     margin-top: 30px;
   }
+.user-profile {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  gap: 20px;
+  margin-bottom: 40px;
+  background: #ffffff10;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(6px);
+}
+
+.user-profile:hover {
+  box-shadow: 0 6px 18px rgba(255, 255, 255, 0.2);
+}
+
+.user-pic {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ffffff33;
+}
 
   .logout-button {
     padding: 12px 28px;

@@ -1,0 +1,59 @@
+<% layout("/layouts/boilerplate") %>
+<h1>My Items</h1>
+
+<% if (items.length === 0) { %>
+    <p>No items found.</p>
+<% } else { %>
+    <ul>
+        <% items.forEach(item => { %>
+            <li>
+                <strong><%= item.title %></strong> - <%= item.description %> (Size: <%= item.size %>)
+                
+                <details>
+                    <summary>Edit</summary>
+                    <form action="/user/<%= item.userId %>/items/<%= item._id %>?_method=PUT" method="POST">
+                        <label>Title:</label>
+                        <input type="text" name="title" value="<%= item.title %>" required><br>
+
+                        <label>Description:</label>
+                        <textarea name="description"><%= item.description %></textarea><br>
+
+                        <label>Size:</label>
+                        <input type="text" name="size" value="<%= item.size %>"><br>
+
+                        <label>Condition:</label>
+                        <input type="text" name="condition" value="<%= item.condition %>"><br>
+
+                        <label>Image URL:</label>
+                        <input type="text" name="imageUrl" value="<%= item.imageUrl %>"><br>
+
+                        <button type="submit">Update</button>
+                    </form>
+                </details>
+            </li>
+            <hr>
+        <% }) %>
+    </ul>
+<% } %>
+
+<hr>
+
+<h2>Add New Item</h2>
+<form action="/user/<%= user._id %>/items" method="POST">
+    <label>Title:</label>
+    <input type="text" name="title" placeholder="Title" required><br>
+
+    <label>Description:</label>
+    <textarea name="description" placeholder="Description"></textarea><br>
+
+    <label>Size:</label>
+    <input type="text" name="size" placeholder="Size"><br>
+
+    <label>Condition:</label>
+    <input type="text" name="condition" placeholder="Condition"><br>
+
+    <label>Image URL:</label>
+    <input type="text" name="imageUrl" placeholder="Image URL"><br>
+
+    <button type="submit">Add Item</button>
+</form>
